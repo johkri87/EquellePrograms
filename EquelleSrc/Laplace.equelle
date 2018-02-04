@@ -1,0 +1,3 @@
+
+number=8
+Output("Print some text", number)
