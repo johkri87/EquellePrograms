@@ -1,3 +1,20 @@
+# Laplace with Dirichlet boundary conditions.
 
-number=8
-Output("Print some text", number)
+timesteps = InputSequenceOfScalar("timesteps")
+
+# u_initial is user input
+u_initial = InputCollectionOfScalar("u_initial", AllCells())
+
+u0 : Mutable Collection Of Scalar On AllCells()
+u0 = u_initial
+
+# Support for Dirichlet boundaries
+dir_boundary = InputDomainSubsetOf("dir_bnd", BoundaryFaces())
+dir_val = InputCollectionOfScalar("dir_val", dir_boundary)
+
+For dt In timesteps {
+    u = Divergence(Gradient(u0))
+    Output("u", u)
+    Output("maximum of u", MaxReduce(u))
+    u0 = u
+}
