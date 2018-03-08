@@ -1,13 +1,21 @@
 #!/bin/bash
+if [$# -gt 0]
+then
+rm CompiledSrc/*
+fi
 
-for i in $(ls EquelleSrc/*.equelle)
+
+for backend in $@
 do
-    echo "Compiling $i"
-    bn=$(basename $i .equelle)
-    nondim=""
-    if [[ $nondim =~ (^| )$bn($| ) ]]; then
-        ../build-cuda8/compiler/ec -i $i --nondimensional --backend=$1 > "CompiledSrc/out_$bn.cpp"
-    else
-        ../build-cuda8/compiler/ec -i $i --backend=$1 > "CompiledSrc/out_$bn.cpp"
-    fi
+	for i in $(ls EquelleSrc/*.equelle)
+	do
+	    echo "Compiling $i with the $backend backend"
+	    bn=$(basename $i .equelle)
+	    nondim=""
+	    if [[ $nondim =~ (^| )$bn($| ) ]]; then
+	        ../new-build/compiler/ec -i $i --nondimensional --backend=$backend> "CompiledSrc/$1out_${bn}_${backend}.cpp"
+	    else
+	        ../new-build/compiler/ec -i $i --backend=$backend > "CompiledSrc/out_${bn}_${backend}.cpp"
+	    fi
+	done
 done

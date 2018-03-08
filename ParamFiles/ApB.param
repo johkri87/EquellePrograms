@@ -1,0 +1,14 @@
+grid_dim=2
+nx=1000
+dx=1
+ny=1000
+dy=1
+u_initial=300
+dir_bnd_from_file=true
+dir_bnd_filename=../ParamFiles/dir_bnd.mat
+dir_val_from_file=true
+dir_val_filename=../ParamFiles/dir_val.mat
+timesteps_from_file=true
+timesteps_filename=../ParamFiles/timesteps.mat
+output_to_file=true
+solver=CG

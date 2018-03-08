@@ -1,0 +1,30 @@
+# Laplace with Dirichlet boundary conditions.
+
+timesteps = InputSequenceOfScalar("timesteps")
+
+# u_initial is user input
+u_initial = InputCollectionOfScalar("u_initial", AllCells())
+
+u0 : Mutable Collection Of Scalar On AllCells()
+u0 = u_initial
+
+
+For dt In timesteps {
+    u = u0 + Divergence(Gradient(u0))
+    Output("u", u)
+    Output("maximum of u", MaxReduce(u))
+    u0 = u
+}
+
+# u^{n+1} = u^n + h*Div(Grad(u^n))
+
+
+
+
+
+
+
+
+# Support for Dirichlet boundaries
+dir_boundary = InputDomainSubsetOf("dir_bnd", BoundaryFaces())
+dir_val = InputCollectionOfScalar("dir_val", dir_boundary)

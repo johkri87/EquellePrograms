@@ -1,0 +1,11 @@
+a_CollScal : Collection Of Scalar On AllCells()
+a_CollScal = InputCollectionOfScalar("u_initial", AllCells())
+
+b = 2 * a_CollScal + a_CollScal
+# Should not be allowed
+c = a_CollScal * 2 + b
+#d = a + b * c + a * b + c
+#c = a * b + c
+#d = a + b * c
+
+Output("AtBpC", c)

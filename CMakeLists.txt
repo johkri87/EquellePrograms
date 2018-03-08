@@ -12,8 +12,6 @@ if(NOT MSVC)
 	set( CMAKE_CXX_FLAGS "-std=c++14 -Wall -Wextra ${CMAKE_CXX_FLAGS}")
 endif()
 
-message(${CMAKE_CXX_FLAGS})
-
 
 include("../releaseconf.cmake")
 

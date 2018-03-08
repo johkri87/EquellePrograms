@@ -1,0 +1,16 @@
+grid_dim=2
+nx=1000
+dx=1
+ny=1000
+dy=1
+k=4.5
+u_initial=100
+dir_boundary_from_file=true
+dir_boundary_filename=../HeateqParams/dir_bnd.mat
+dir_val_from_file=true
+dir_val_filename=../HeateqParams/dir_val.mat
+timesteps_from_file=true
+timesteps_filename=../HeateqParams/timesteps.mat
+output_to_file=true
+solver=BiCGStab
+preconditioner=diagonal
