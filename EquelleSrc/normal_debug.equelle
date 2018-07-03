@@ -1,0 +1,13 @@
+# Equelle Laplace Operator
+
+# Input grid values
+u_initial = InputCollectionOfScalar("u_initial", AllCells())
+
+interior_faces = InteriorFaces()
+first = FirstCell(interior_faces)
+second = SecondCell(interior_faces)
+cdiff1 = Centroid(first) - Centroid(interior_faces)
+
+u1 = Dot(Normal(interior_faces), cdiff1) 
+
+Output("n_debug", u1)

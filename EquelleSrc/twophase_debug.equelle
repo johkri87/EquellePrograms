@@ -1,0 +1,164 @@
+# Two-phase porous media flow with no-flow boundary and simple source terms.
+
+# This example is intended to show how an operator-splitting scheme for a
+# system of equations can be implemented.
+
+# Petrophysical and fluid properties.
+perm = InputCollectionOfScalar("perm", AllCells()) * 1 [Meter^2]
+poro_in = InputCollectionOfScalar("poro", AllCells())
+watervisc = InputScalarWithDefault("watervisc", 0.0005) * 1 [Kilogram / (Meter * Second)]
+oilvisc = InputScalarWithDefault("oilvisc", 0.005) * 1 [Kilogram / (Meter * Second)]
+
+# Need non-zero porosity.
+min_poro = InputScalarWithDefault("min_poro", 0.0001) Extend AllCells()
+poro = (poro_in < min_poro) ? min_poro : poro_in
+pv = poro * |AllCells()|
+
+# Computing transmissibilities.
+computeTransmissibilities(permeability) = {
+    interior_faces = InteriorFaces()
+    first = FirstCell(interior_faces)
+    second = SecondCell(interior_faces)
+    cdiff1 = Centroid(first) - Centroid(interior_faces)
+    cdiff2 = Centroid(second) - Centroid(interior_faces)
+    p1 = permeability On first
+    p2 = permeability On second
+    a = |interior_faces|
+    halftrans1 = -a * p1 * Dot(Normal(interior_faces), cdiff1) / Dot(cdiff1, cdiff1)
+    halftrans2 = a * p2 * Dot(Normal(interior_faces), cdiff2) / Dot(cdiff2, cdiff2)
+    trans = 1.0 / (1.0/halftrans1 + 1.0/halftrans2)
+    -> trans
+}
+
+# Actually compute transmissibilities.
+trans = computeTransmissibilities(perm)
+
+# Upwind selection.
+upwind(flux, x) = {
+    x1 = x On FirstCell(InteriorFaces())
+    x2 = x On SecondCell(InteriorFaces())
+    zero = 0.0 * flux # To get correct dimension.
+    -> flux >= zero ? x1 : x2
+}
+
+# Total flux
+computeTotalFlux(pressure, total_mobility) = {
+    ngradp = -Gradient(pressure)
+    face_total_mobility = upwind(ngradp, total_mobility)
+
+    -> trans * face_total_mobility * ngradp
+}
+
+# Pressure residual
+computePressureResidual(pressure, total_mobility, source) = {
+    flux = computeTotalFlux(pressure, total_mobility)
+    Output("flux", flux)
+    Output("Divergence_etc_pressure", Divergence(flux) - source)
+    Output("Divergence_flux", Divergence(flux))
+    Output("source", source)
+    -> Divergence(flux) - source
+}
+
+
+
+# Water mobility
+computeWaterMob(sw) = {
+    krw = sw
+    -> krw / watervisc
+}
+
+# Oil mobility
+computeOilMob(sw) = {
+    kro = (1.0 Extend AllCells()) - sw
+    -> kro / oilvisc
+}
+
+# Transport residual
+computeTransportResidual(sw, sw0, flux, source, insource_sw, dt) = {
+    zero = 0.0 [Meter^3 / Second]
+    insource = source > zero ? source : zero Extend AllCells()
+    Output("Insource",insource)
+    Output("Insource_sw",insource_sw)
+    outsource = source < zero ? source : zero Extend AllCells()
+    Output("Outsource",outsource)
+    mw = computeWaterMob(sw)
+    Output("mw", mw)
+    mo = computeOilMob(sw)
+    Output("mo", mo)
+    fracflow = mw / (mw + mo)
+    Output("fracflow", fracflow)
+    face_fracflow = upwind(flux, fracflow)
+    Output("face_fracflow", face_fracflow)
+    water_flux = face_fracflow * flux
+    Output("water_flux", water_flux)
+    q = insource * insource_sw + outsource * fracflow
+    Output("q", q)
+    Output("Divergence_etc", Divergence(water_flux) - q)
+    -> sw - sw0 + (dt/pv) * (Divergence(water_flux) - q)
+}
+
+# Initialise state variables.
+timesteps = InputSequenceOfScalar("timesteps") * 1 [Second]
+sw_initial = InputCollectionOfScalar("sw_initial", AllCells())
+source_cells = InputDomainSubsetOf("source_cells", AllCells())
+source_values = InputCollectionOfScalar("source_values", source_cells) * 1 [Meter^3 / Second]
+source = source_values Extend AllCells()
+insource_sw = 1.0 Extend AllCells()
+sw0 : Mutable Collection Of Scalar On AllCells()
+sw0 = sw_initial
+p0 : Mutable Collection Of Scalar On AllCells()
+p0 = (0.0 [Pascal]) Extend AllCells()
+
+
+
+# Output initial solution
+#Output("pressure", p0)
+#Output("saturation", sw0)
+
+    #total_mobility = computeWaterMob(sw0) + computeOilMob(sw0)
+    #computePressureResidual(pressure, total_mobility, source)
+    total_mobility1 = computeWaterMob(sw0) + computeOilMob(sw0)
+
+    
+
+    pressureResLocal(pressure) = {
+        -> computePressureResidual(pressure, total_mobility1, source)
+    }
+
+    p = NewtonSolve(pressureResLocal, p0)
+    Output("p", p)
+    #flux = computeTotalFlux(p, total_mobility)
+    # Compute saturation.
+    #transportResLocal(sw) = {
+    #    -> computeTransportResidual(sw, sw0, flux, source, insource_sw, dt)
+    #}
+    #sw = NewtonSolve(transportResLocal, 0.5 Extend AllCells())
+
+    #Output("sw", sw)
+    #Output("p", p)
+
+# Main timestepping loop.
+#For dt In timesteps {
+    # Compute flux.
+#    total_mobility = computeWaterMob(sw0) + computeOilMob(sw0)
+
+#    pressureResLocal(pressure) = {
+#        -> computePressureResidual(pressure, total_mobility, source)
+#    }
+
+#    p = NewtonSolve(pressureResLocal, p0)
+#    flux = computeTotalFlux(p, total_mobility)
+    # Compute saturation.
+#    transportResLocal(sw) = {
+#        -> computeTransportResidual(sw, sw0, flux, source, insource_sw, dt)
+#    }
+#    sw = NewtonSolve(transportResLocal, 0.5 Extend AllCells())
+
+    # Update state variables
+#    p0 = p
+#    sw0 = sw
+
+    # Output new solution
+    #Output("pressure", p0)
+    #Output("saturation", sw0)
+#}

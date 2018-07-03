@@ -74,8 +74,8 @@ u0 : Mutable Collection Of Scalar On AllCells()
 u0 = u_initial
 
 # Output initial conditions
-Output("u", u0)
-Output("maximum of u", MaxReduce(u0))
+#Output("u", u0)
+#Output("maximum of u", MaxReduce(u0))
 	
 For dt In timesteps {
     computeResidualLocal(u) = {
@@ -83,7 +83,7 @@ For dt In timesteps {
     }
     u_guess = u0
     u = NewtonSolve(computeResidualLocal, u_guess)
-    Output("u", u)
+    #Output("u", u)
     Output("maximum of u", MaxReduce(u))
     u0 = u
 }

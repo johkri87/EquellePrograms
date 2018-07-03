@@ -1,0 +1,67 @@
+# Heat diffusion constant.
+alpha : Scalar = InputScalarWithDefault("alpha", 0.3)
+
+# Input timesteps.
+timesteps : Sequence Of Scalar
+timesteps = InputSequenceOfScalar("timesteps")
+
+# Input initial temperatures.
+u0 : Collection Of Scalar On AllCells()
+u0 = InputCollectionOfScalar("u_initial", AllCells())
+
+# Input boundary condition domain, a subset of BoundaryFaces.
+dirichlet_boundary : Collection Of Face Subset Of (BoundaryFaces())
+dirichlet_boundary = InputDomainSubsetOf("dir_boundary", BoundaryFaces())
+
+# Input boundary condition (heat) values.
+dirichlet_values : Collection Of Scalar On dirichlet_boundary
+dirichlet_values = InputCollectionOfScalar("dir_values", dirichlet_boundary)
+
+# Compute interior transmissibilities.
+ifaces = InteriorFaces()
+first = FirstCell(ifaces)
+second = SecondCell(ifaces)
+itrans : Collection Of Scalar On ifaces
+itrans = alpha * |ifaces| / |Centroid(first) - Centroid(second)|
+
+# Compute boundary transmissibilities.
+bf = BoundaryFaces()
+bf_cells = IsEmpty(FirstCell(bf)) ? SecondCell(bf) : FirstCell(bf)
+bf_sign = IsEmpty(FirstCell(bf)) ? (-1 Extend bf) : (1 Extend bf)
+btrans = alpha * |bf| / |Centroid(bf) - Centroid(bf_cells)|
+
+# Compute quantities needed for boundary conditions.
+dir_sign = bf_sign On dirichlet_boundary
+
+# Function for computing flux for interior faces.
+computeInteriorFlux : Function(u : Collection Of Scalar On AllCells()) ...
+                      -> Collection Of Scalar On InteriorFaces()
+computeInteriorFlux(u) = {
+    -> -itrans * Gradient(u)
+}
+
+# Function for computing flux for boundary faces.
+computeBoundaryFlux : Function(u : Collection Of Scalar On AllCells()) ...
+                      -> Collection Of Scalar On BoundaryFaces()
+computeBoundaryFlux(u) = {
+    # Compute flux at Dirichlet boundaries.
+    u_dirbdycells = u On (bf_cells On dirichlet_boundary)
+    dir_fluxes = (btrans On dirichlet_boundary) * dir_sign ...
+                 * (u_dirbdycells - dirichlet_values)
+    -> dir_fluxes Extend BoundaryFaces()
+}
+
+# Need mutable variable for the loop.
+u : Mutable Collection Of Scalar On AllCells()
+u = u0
+For dt In timesteps
+{
+    # Compute fluxes.
+    ifluxes = computeInteriorFlux(u)
+    bfluxes = computeBoundaryFlux(u)
+    fluxes = (ifluxes Extend AllFaces()) + (bfluxes Extend AllFaces())
+
+    # Solve for current timestep.
+    u = u - (dt / |AllCells()|) * Divergence(fluxes)
+}
+

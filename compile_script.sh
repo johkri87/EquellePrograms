@@ -11,11 +11,6 @@ do
 	do
 	    echo "Compiling $i with the $backend backend"
 	    bn=$(basename $i .equelle)
-	    nondim=""
-	    if [[ $nondim =~ (^| )$bn($| ) ]]; then
-	        ../new-build/compiler/ec -i $i --nondimensional --backend=$backend> "CompiledSrc/$1out_${bn}_${backend}.cpp"
-	    else
-	        ../new-build/compiler/ec -i $i --backend=$backend > "CompiledSrc/out_${bn}_${backend}.cpp"
-	    fi
+	        ../new-build/compiler/ec -i $i --nondimensional --backend=$backend > "CompiledSrc/out_${bn}_${backend}.cpp"
 	done
 done

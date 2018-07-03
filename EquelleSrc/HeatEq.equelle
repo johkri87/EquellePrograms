@@ -1,10 +1,15 @@
-# Laplace with Dirichlet boundary conditions.
-
+# Read timesteps from file
 timesteps = InputSequenceOfScalar("timesteps")
 
-# u_initial is user input
+# Read the initial temperatures from file
 u_initial = InputCollectionOfScalar("u_initial", AllCells())
 
+# Read the dirichlet boundary values
+dir_boundary = InputDomainSubsetOf("dir_boundary", BoundaryFaces())
+dir_val = InputCollectionOfScalar("dir_val", dir_boundary)
+
+# u0 is declared mutable, which is necessary
+# since its value will be reassigned
 u0 : Mutable Collection Of Scalar On AllCells()
 u0 = u_initial
 
@@ -15,16 +20,3 @@ For dt In timesteps {
     Output("maximum of u", MaxReduce(u))
     u0 = u
 }
-
-# u^{n+1} = u^n + h*Div(Grad(u^n))
-
-
-
-
-
-
-
-
-# Support for Dirichlet boundaries
-dir_boundary = InputDomainSubsetOf("dir_bnd", BoundaryFaces())
-dir_val = InputCollectionOfScalar("dir_val", dir_boundary)

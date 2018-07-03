@@ -1,11 +1,19 @@
+# This program is meant as a benchmark for the operation a * b + c.
+# It does not check correctness of the operation.
+
 a_CollScal : Collection Of Scalar On AllCells()
 a_CollScal = InputCollectionOfScalar("u_initial", AllCells())
 
-b = 2 * a_CollScal + a_CollScal
-# Should not be allowed
-c = a_CollScal * 2 + b
-#d = a + b * c + a * b + c
-#c = a * b + c
-#d = a + b * c
+timesteps = InputSequenceOfScalar("timesteps")
 
-Output("AtBpC", c)
+For dt In timesteps {
+	# Scalar * Collection + Collection
+    b_CollScal = dt * a_CollScal + a_CollScal
+
+    # Collection * Scalar + Collection
+    c_CollScal = a_CollScal * dt + b_CollScal
+
+    # Collection + Collection * Collection
+    d = a_CollScal + b_CollScal * c_CollScal
+}
+
